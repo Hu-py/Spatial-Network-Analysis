@@ -135,18 +135,19 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     angles_c = np.concatenate([angles, [angles[0]]])
     means_c = np.concatenate([dfz.mean(axis=0).values, [dfz.mean(axis=0).values[0]]])
     
-    ax0 = fig.add_subplot(3,1,1, polar=True)  # 使用 projection='polar'
+    ax0 = fig.add_subplot(3,1,1, polar=True)
     ax0.plot(angles_c, means_c, linewidth=2)
     ax0.fill(angles_c, means_c, alpha=0.2)
     ax0.set_xticks(angles)
     ax0.set_xticklabels(labels)
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)')
     
-    # 移除极坐标外面的矩形边框
-    ax0.spines['polar'].set_visible(False)  # 去掉极坐标的边框
-    ax0.set_frame_on(False)       # 关闭整个Axes的边框
-    ax0.patch.set_visible(False)
-    
+    # 去掉整个极坐标的外框和刻度线
+    ax0.set_axis_off()
+    # 仅保留数据线和填充
+    ax0.plot(angles_c, means_c, linewidth=2, color='tab:blue')
+    ax0.fill(angles_c, means_c, alpha=0.2)
+
     # Heatmap
     ax1 = axes[1]
     im=ax1.imshow(corr,vmin=-1,vmax=1,cmap='coolwarm')
