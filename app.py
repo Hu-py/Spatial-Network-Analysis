@@ -258,24 +258,24 @@ scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
 central_choice = st.sidebar.selectbox("Color by centrality", ['degree','closeness','betweenness','eigenvector','pagerank'], index=2)
 
 # Grid parameters
-st.sidebar.markdown("**Grid parameters**")
-m = st.sidebar.slider("Grid m", 3, 20, 10)
-n = st.sidebar.slider("Grid n", 3, 20, 10)
-diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=False)
+if scenario == 'Grid':
+    st.sidebar.markdown("**Grid parameters**")
+    m = st.sidebar.slider("Grid m", 3, 20, 10)
+    n = st.sidebar.slider("Grid n", 3, 20, 10)
+    diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=False)
+elif scenario == 'Organic':
+    st.sidebar.markdown("**Organic parameters**")
+    n_org = st.sidebar.slider("Organic nodes", 40, 400, 140, step=10)
+    radius = st.sidebar.slider("Radius", 0.05, 0.3, 0.15, step=0.01)
+    extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, 0.15, step=0.05)
+else:  # Hybrid
+    st.sidebar.markdown("**Hybrid parameters**")
+    m_h = st.sidebar.slider("Hybrid grid m", 4, 16, 8)
+    n_h = st.sidebar.slider("Hybrid grid n", 4, 16, 8)
+    right_n = st.sidebar.slider("Right nodes", 20, 300, 80, step=10)
+    r_h = st.sidebar.slider("Right radius", 0.06, 0.3, 0.18, step=0.01)
+    bridges = st.sidebar.slider("Bridges", 1, 30, 8)
 
-# Organic parameters
-st.sidebar.markdown("**Organic parameters**")
-n_org = st.sidebar.slider("Organic nodes", 40, 400, 140, step=10)
-radius = st.sidebar.slider("Radius", 0.05, 0.3, 0.15, step=0.01)
-extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, 0.15, step=0.05)
-
-# Hybrid parameters
-st.sidebar.markdown("**Hybrid parameters**")
-m_h = st.sidebar.slider("Hybrid grid m", 4, 16, 8)
-n_h = st.sidebar.slider("Hybrid grid n", 4, 16, 8)
-right_n = st.sidebar.slider("Right nodes", 20, 300, 80, step=10)
-r_h = st.sidebar.slider("Right radius", 0.06, 0.3, 0.18, step=0.01)
-bridges = st.sidebar.slider("Bridges", 1, 30, 8)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Adjacency editing (select nodes, click button to apply)**")
@@ -283,10 +283,7 @@ add_edge_click = st.sidebar.button("Add edge")
 remove_edge_click = st.sidebar.button("Remove edge")
 st.sidebar.markdown("---")
 
-show_adj = st.sidebar.checkbox("Show adjacency matrix", value=True)
-show_hist = st.sidebar.checkbox("Show histogram", value=True)
-
-st.sidebar.markdown("**Multi-metric dashboard (auto-update)**")
+st.sidebar.markdown("**Multi-metric dashboard**")
 metrics_sel = st.sidebar.multiselect("Select metrics", ['degree','closeness','betweenness','eigenvector','pagerank'], default=['degree','closeness','betweenness','eigenvector','pagerank'])
 st.sidebar.markdown("---")
 st.sidebar.caption("All changes automatically update the right panel; edge edits require button click.")
