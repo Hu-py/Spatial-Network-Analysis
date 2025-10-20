@@ -247,6 +247,14 @@ with left_col:
     ax_adj.set_title('Adjacency (unweighted)')
     ax_adj.set_xlabel('node'); ax_adj.set_ylabel('node')
     st.pyplot(fig_adj)
+
+    st.subheader(f"{central_choice} distribution (main seed)")
+    vals = np.array(list(cent_main[central_choice].values()))
+    fig_hist, axh = plt.subplots(figsize=(6,2.5))
+    axh.hist(vals, bins=20, alpha=0.8)
+    axh.set_title(f'{central_choice} distribution')
+    axh.set_xlabel('value'); axh.set_ylabel('count')
+    st.pyplot(fig_hist)
     
 with right_col:
     st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
@@ -260,13 +268,7 @@ with right_col:
     )
     st.pyplot(fig_dash)
 
-    st.subheader(f"{central_choice} distribution (main seed)")
-    vals = np.array(list(cent_main[central_choice].values()))
-    fig_hist, axh = plt.subplots(figsize=(6,2.5))
-    axh.hist(vals, bins=20, alpha=0.8)
-    axh.set_title(f'{central_choice} distribution')
-    axh.set_xlabel('value'); axh.set_ylabel('count')
-    st.pyplot(fig_hist)
+
 
     # ------------------------------
     # Export CSVs
