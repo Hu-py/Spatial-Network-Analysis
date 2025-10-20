@@ -128,14 +128,24 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     angles = np.linspace(0,2*np.pi,len(labels),endpoint=False)
     angles_c = np.concatenate([angles,[angles[0]]])
     means_c = np.concatenate([dfz.mean(axis=0).values,[dfz.mean(axis=0).values[0]]])
-    fig,axes = plt.subplots(3,1,figsize=(8,20),constrained_layout=True)
-    # Radar
-    ax0 = plt.subplot(3,1,1,polar=True)
-    ax0.plot(angles_c,means_c,linewidth=2)
-    ax0.fill(angles_c,means_c,alpha=0.2)
+    fig, axes = plt.subplots(3,1,figsize=(8,20), constrained_layout=True)
+
+    # === 雷达图 ===
+    angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
+    angles_c = np.concatenate([angles, [angles[0]]])
+    means_c = np.concatenate([dfz.mean(axis=0).values, [dfz.mean(axis=0).values[0]]])
+    
+    ax0 = fig.add_subplot(3,1,1, polar=True)  # 使用 projection='polar'
+    ax0.plot(angles_c, means_c, linewidth=2)
+    ax0.fill(angles_c, means_c, alpha=0.2)
     ax0.set_xticks(angles)
     ax0.set_xticklabels(labels)
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)')
+    
+    # 移除极坐标外面的矩形边框
+    ax0.spines['polar'].set_visible(False)  # 去掉极坐标的边框
+
+    
     # Heatmap
     ax1 = axes[1]
     im=ax1.imshow(corr,vmin=-1,vmax=1,cmap='coolwarm')
@@ -173,7 +183,7 @@ def dashboard_compare(df_main, df_compare, title_prefix='', main_seed=None, comp
     ax.set_xticklabels(labels, rotation=45, ha='right')
     ax.set_title(f'Mean centrality comparison\n(main seed={main_seed}, comparison seed={compare_seed})')
     ax.legend()
-    fig.suptitle(f'{title_prefix} Comparison', fontsize=14)
+    #fig.suptitle(f'{title_prefix} Comparison', fontsize=14)
     return fig
     
 # ------------------------------
