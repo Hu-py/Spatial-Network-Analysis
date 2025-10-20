@@ -329,14 +329,14 @@ pos = st.session_state.pos
 left_col, right_col = st.columns([1.2, 1])
 
 with left_col:
-    #st.subheader(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
+    st.subheader(f"{scenario}")
     cent = compute_centralities(G)
     if st.session_state.cent_before is None:
         st.session_state.cent_before = cent
         st.session_state.cent_after = None
 
     fig_net = draw_network_matplot(G, pos, cent[central_choice],
-                                   title=f"{scenario} {G.number_of_nodes()}, edges={G.number_of_edges()} (colored by {central_choice})")
+                                   title=f"{scenario} nodes={G.number_of_nodes()}, edges={G.number_of_edges()} (colored by {central_choice})")
     st.pyplot(fig_net)
 
     # Adjacency matrix
