@@ -333,28 +333,6 @@ if st.session_state.get('G') is None or need_rebuild(st.session_state.last_param
 G = st.session_state.G
 pos = st.session_state.pos
 
-# Update node selection options
-node_list = sorted(G.nodes())
-u = st.sidebar.selectbox("Node u", node_list, index=0 if node_list else None)
-v = st.sidebar.selectbox("Node v", node_list, index=1 if len(node_list)>1 else None)
-
-# ------------------------------
-# Edge edit handlers
-# ------------------------------
-if add_edge_click and G is not None and u is not None and v is not None and u != v:
-    prev_cent = compute_centralities(G)
-    if not G.has_edge(u,v):
-        x0,y0 = pos[u]; x1,y1 = pos[v]
-        G.add_edge(u,v, length=np.hypot(x0-x1, y0-y1))
-    st.session_state.cent_before = prev_cent
-    st.session_state.cent_after = compute_centralities(G)
-
-if remove_edge_click and G is not None and u is not None and v is not None and u != v:
-    prev_cent = compute_centralities(G)
-    if G.has_edge(u,v):
-        G.remove_edge(u,v)
-    st.session_state.cent_before = prev_cent
-    st.session_state.cent_after = compute_centralities(G)
 
 # ------------------------------
 # Main layout
