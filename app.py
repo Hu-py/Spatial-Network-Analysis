@@ -168,7 +168,7 @@ def centrality_dataframe(cent_dict):
         rows.append(row)
     return pd.DataFrame(rows).set_index('node')
 
-def dashboard(df, dfz, corr, title_prefix='', cent_ref=None):
+def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
     labels = list(dfz.columns)
     means = dfz.mean(axis=0).values
     angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
