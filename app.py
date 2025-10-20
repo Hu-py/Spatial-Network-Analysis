@@ -273,6 +273,11 @@ with right_col:
     )
     st.pyplot(fig_dash)
 
+    st.subheader(f"Baseline network ({scenario}, seed={rand_seed_base})")
+    fig_base_net = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
+                                        title=f"{scenario} baseline network: nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()}, seed={rand_seed_base}")
+    st.pyplot(fig_base_net)
+
 
 
     # ------------------------------
