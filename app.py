@@ -239,6 +239,15 @@ with left_col:
     )
     st.pyplot(fig_net)
 
+    st.subheader("Adjacency matrix (unweighted)")
+    idx = list(G_main.nodes())
+    A = nx.to_numpy_array(G_main, nodelist=idx, weight=None, dtype=int)
+    fig_adj, ax_adj = plt.subplots(figsize=(5,5))
+    ax_adj.imshow(A, cmap='Greys', interpolation='nearest')
+    ax_adj.set_title('Adjacency (unweighted)')
+    ax_adj.set_xlabel('node'); ax_adj.set_ylabel('node')
+    st.pyplot(fig_adj)
+    
 with right_col:
     st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
     corr_main = df_selected.corr(method='spearman')
