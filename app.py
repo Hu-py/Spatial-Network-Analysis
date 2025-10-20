@@ -130,7 +130,7 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     means_c = np.concatenate([dfz.mean(axis=0).values,[dfz.mean(axis=0).values[0]]])
     fig,axes = plt.subplots(4,1,figsize=(8,20),constrained_layout=True)
     # Radar
-    ax0 = plt.subplot(4,1,1,polar=True)
+    ax0 = plt.subplot(3,1,1,polar=True)
     ax0.plot(angles_c,means_c,linewidth=2)
     ax0.fill(angles_c,means_c,alpha=0.2)
     ax0.set_xticks(angles)
@@ -155,21 +155,7 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
         ax2.set_title(f'Rank–rank scatter: ρ={r:.2f}, p={p:.1e}')
     else:
         ax2.text(0.5,0.5,'Select ≥2 metrics',ha='center',va='center'); ax2.axis('off')
-    # Delta centrality
-    ax3 = axes[3]
-    if cent_ref is not None:
-        width = 0.35  # 条宽
-        x = np.arange(len(labels))
-        main_vals = df.values.mean(axis=0)
-        base_vals = cent_ref.values.mean(axis=0)
-        ax3.bar(x - width/2, main_vals, width, label='Main', color='tab:blue', alpha=0.7)
-        ax3.bar(x + width/2, base_vals, width, label='Baseline', color='tab:orange', alpha=0.7)
-        ax3.set_xticks(x)
-        ax3.set_xticklabels(labels, rotation=45, ha='right')
-        ax3.set_title(f'Mean centrality comparison\n(main seed={main_seed}, baseline seed={base_seed})')
-        ax3.legend()
-    else:
-        ax3.text(0.5,0.5,'No baseline provided',ha='center',va='center'); ax3.axis('off')
+
     fig.suptitle(f'{title_prefix} Multi-metric dashboard',fontsize=14)
     return fig
 
@@ -270,8 +256,6 @@ with left_col:
     ax_adj.set_xlabel('node'); ax_adj.set_ylabel('node')
     st.pyplot(fig_adj)
 
-
-with right_col:
     st.subheader(f"{central_choice} distribution (main seed)")
     vals = np.array(list(cent_main[central_choice].values()))
     fig_hist, axh = plt.subplots(figsize=(6,2.5))
@@ -281,6 +265,7 @@ with right_col:
     st.pyplot(fig_hist)
 
 
+with right_col:
     st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
     corr_main = df_selected.corr(method='spearman')
     fig_dash = dashboard_plot(
