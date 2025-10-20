@@ -371,17 +371,17 @@ with left_col:
     fig_net = draw_network_matplot(G, pos, cent[central_choice], title=f"{scenario} (colored by {central_choice})")
     st.pyplot(fig_net)
 
-    if show_adj:
-        fig_adj = show_adjacency_figure(G)
-        st.pyplot(fig_adj)
+    
+    fig_adj = show_adjacency_figure(G)
+    st.pyplot(fig_adj)
 
-    if show_hist:
-        vals = np.array(list(cent[central_choice].values()))
-        fig_hist, axh = plt.subplots(figsize=(6,2.5))
-        axh.hist(vals, bins=20, alpha=0.8)
-        axh.set_title(f'{central_choice} distribution')
-        axh.set_xlabel('value'); axh.set_ylabel('count')
-        st.pyplot(fig_hist)
+    
+    vals = np.array(list(cent[central_choice].values()))
+    fig_hist, axh = plt.subplots(figsize=(6,2.5))
+    axh.hist(vals, bins=20, alpha=0.8)
+    axh.set_title(f'{central_choice} distribution')
+    axh.set_xlabel('value'); axh.set_ylabel('count')
+    st.pyplot(fig_hist)
 
     if st.session_state.cent_before is not None and st.session_state.cent_after is not None:
         rho, p, top = (lambda c0, c1: (spearmanr(
