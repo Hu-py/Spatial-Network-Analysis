@@ -144,7 +144,7 @@ def draw_network_matplot(G, pos, centrality, title='Network'):
     nodes.set_edgecolor('k')
     ax.set_title(title)
     ax.axis('off')
-    cbar = plt.colorbar(nodes, ax=ax, fraction=0.046, pad=0.04)
+    cbar = plt.colorbar(nodes, ax=ax, fraction=0.02, pad=0.03)
     cbar.set_label('centrality')
     return fig
 
