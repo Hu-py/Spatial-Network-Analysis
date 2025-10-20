@@ -15,6 +15,7 @@ from scipy.stats import spearmanr
 from io import StringIO, BytesIO
 import json
 import time
+import random
 
 # ------------------------------
 # Scenario generators (same logic as original)
@@ -309,14 +310,20 @@ def need_rebuild(last_params, current_params):
 if 'last_params' not in st.session_state:
     st.session_state.last_params = {}
 
+rand_seed = random.randint(0, 1_000_000)
+st.sidebar.markdown(f"**Random seed:** `{rand_seed}`")
+
+# ------------------------------
+# Rebuild graph if parameters changed
+# ------------------------------
 if st.session_state.get('G') is None or need_rebuild(st.session_state.last_params, current_params):
     st.session_state.last_params = current_params.copy()
     if scenario == 'Grid':
-        G, pos = generate_grid(m, n, diagonals)
+        G, pos = generate_grid(m, n, diagonals, seed=rand_seed)
     elif scenario == 'Organic':
-        G, pos = generate_organic(n_org, radius, extra_ratio)
+        G, pos = generate_organic(n_org, radius, extra_ratio, seed=rand_seed)
     else:
-        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges)
+        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges, seed=rand_seed)
     st.session_state.G = G
     st.session_state.pos = pos
     st.session_state.cent_before = None
