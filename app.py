@@ -292,23 +292,18 @@ with right_col:
     )
     st.pyplot(fig_dash)
 
-    st.subheader(f"Comparison network ({scenario}, seed={rand_seed_base})")
-    fig_base_net = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
-                                        title=f"{scenario} baseline network: nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()}, seed={rand_seed_base}")
-    st.pyplot(fig_base_net)
 
 left_col, mid_col, right_col = st.columns([1,1,1])
 
 # 左：主网络
 with left_col:
-    st.markdown("Main network")
+    st.markdown("**Main network**")
     fig_net = draw_network_matplot(G_main, pos_main, cent_main[central_choice],
                                    title=f"{scenario} nodes={G_main.number_of_nodes()}, edges={G_main.number_of_edges()} (colored by {central_choice})")
     st.pyplot(fig_net)
 
 # 中：对比图
 with mid_col:
-    st.pyplot(fig_dash)
     st.markdown(f"**Comparison network ({scenario}, seed={rand_seed_base})**")
     fig_net_cmp = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
                                        title=f"{scenario} nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()} (colored by {central_choice})")
