@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Streamlit Spatial Network Analysis — 自动响应版
 Created on Mon Oct 20 10:20:25 2025
-
-@author: zha
+@author: zha (modified)
 """
-
-
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -17,8 +15,6 @@ from scipy.stats import spearmanr
 from io import StringIO, BytesIO
 import json
 import time
-
-st.set_page_config(page_title="Spatial Network Analysis")
 
 # ------------------------------
 # Scenario generators (same logic as original)
@@ -98,10 +94,10 @@ def generate_hybrid(m=8, n=8, right_n=80, radius=0.18, bridges=8, seed=2):
     right_nodes = [u for u,(x,y) in pos.items() if x >= 0.5]
     left_pts = np.array([pos[u] for u in left_nodes])
     right_pts = np.array([pos[u] for u in right_nodes])
-    treeR = KDTree(right_pts)
+    treeR = KDTree(right_pts) if len(right_pts)>0 else None
     added = 0; tried = set()
     for i,u in enumerate(left_nodes):
-        if added>=bridges: break
+        if added>=bridges or treeR is None: break
         d, j = treeR.query(pos[u])
         v = right_nodes[j]
         if (u,v) in tried: continue
@@ -120,7 +116,6 @@ def compute_centralities(G):
     cent['degree'] = {u: d for u,d in G.degree()}
     maxdeg = max(cent['degree'].values()) or 1
     cent['degree'] = {u: d/maxdeg for u,d in cent['degree'].items()}
-    # closeness with 'length' fallback
     try:
         cent['closeness'] = nx.closeness_centrality(G, distance='length')
     except Exception:
@@ -182,14 +177,12 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
 
     fig = plt.figure(figsize=(14,8))
     gs = fig.add_gridspec(2, 2, height_ratios=[1,1.2], width_ratios=[1,1])
-    # Radar
     ax0 = fig.add_subplot(gs[0,0], polar=True)
     ax0.plot(angles_c, means_c, linewidth=2)
     ax0.fill(angles_c, means_c, alpha=0.2)
     ax0.set_xticks(angles); ax0.set_xticklabels(labels)
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)')
 
-    # Correlation heatmap
     ax1 = fig.add_subplot(gs[0,1])
     im = ax1.imshow(corr, vmin=-1, vmax=1, cmap='coolwarm')
     ax1.set_xticks(range(len(labels))); ax1.set_xticklabels(labels, rotation=45, ha='right')
@@ -197,7 +190,6 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
     ax1.set_title('Spearman correlation among metrics')
     fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
 
-    # Rank scatter
     ax2 = fig.add_subplot(gs[1,0])
     if len(labels) >= 2:
         a, b = labels[0], labels[1]
@@ -209,7 +201,6 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
         ax2.text(0.5, 0.5, 'Select ≥2 metrics', ha='center', va='center')
         ax2.axis('off')
 
-    # Delta
     ax3 = fig.add_subplot(gs[1,1])
     if cent_ref is not None:
         delta_mean = (df - cent_ref).mean(axis=0)
@@ -235,29 +226,33 @@ if 'cent_before' not in st.session_state:
     st.session_state.cent_before = None
 if 'cent_after' not in st.session_state:
     st.session_state.cent_after = None
-if 'last_build_time' not in st.session_state:
-    st.session_state.last_build_time = None
+if 'last_params' not in st.session_state:
+    st.session_state.last_params = {}
 
 # ------------------------------
-# Sidebar: Controls (similar to original)
+# Sidebar: Controls (reactive)
 # ------------------------------
+st.set_page_config(page_title="Spatial Network Analysis")
+st.title("Spatial Network Analysis")
+
 st.sidebar.title("Scenario & Parameters")
-scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
-central_choice = st.sidebar.selectbox("Color by centrality", CENTRALS, index=CENTRALS.index('betweenness'))
 
-# Grid params
+scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
+central_choice = st.sidebar.selectbox("Color by centrality", ['degree','closeness','betweenness','eigenvector','pagerank'], index=2)
+
+# Grid parameters
 st.sidebar.markdown("**Grid parameters**")
 m = st.sidebar.slider("Grid m", 3, 20, 10)
 n = st.sidebar.slider("Grid n", 3, 20, 10)
 diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=False)
 
-# Organic params
+# Organic parameters
 st.sidebar.markdown("**Organic parameters**")
 n_org = st.sidebar.slider("Organic nodes", 40, 400, 140, step=10)
 radius = st.sidebar.slider("Radius", 0.05, 0.3, 0.15, step=0.01)
 extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, 0.15, step=0.05)
 
-# Hybrid params
+# Hybrid parameters
 st.sidebar.markdown("**Hybrid parameters**")
 m_h = st.sidebar.slider("Hybrid grid m", 4, 16, 8)
 n_h = st.sidebar.slider("Hybrid grid n", 4, 16, 8)
@@ -266,108 +261,85 @@ r_h = st.sidebar.slider("Right radius", 0.06, 0.3, 0.18, step=0.01)
 bridges = st.sidebar.slider("Bridges", 1, 30, 8)
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Adjacency edit**")
-# populate node selectors dynamically
-def ensure_graph_built():
-    if st.session_state.G is None:
-        build_graph()
-    # else leave as is
-
-# Buttons
-recompute = st.sidebar.button("Recompute scenario")
-add_edge_btn = st.sidebar.button("Add edge")
-remove_edge_btn = st.sidebar.button("Remove edge")
+st.sidebar.markdown("**Adjacency editing (select nodes, click button to apply)**")
+add_edge_click = st.sidebar.button("Add edge")
+remove_edge_click = st.sidebar.button("Remove edge")
 st.sidebar.markdown("---")
-show_adj = st.sidebar.checkbox("Show adjacency", value=True)
+
+show_adj = st.sidebar.checkbox("Show adjacency matrix", value=True)
 show_hist = st.sidebar.checkbox("Show histogram", value=True)
 
-st.sidebar.markdown("**Multi-metric dashboard**")
-metrics_sel = st.sidebar.multiselect("Metrics to include", CENTRALS, default=CENTRALS)
-show_dashboard_btn = st.sidebar.button("Show dashboard")
-export_csv_btn = st.sidebar.button("Export CSVs")
+st.sidebar.markdown("**Multi-metric dashboard (auto-update)**")
+metrics_sel = st.sidebar.multiselect("Select metrics", ['degree','closeness','betweenness','eigenvector','pagerank'], default=['degree','closeness','betweenness','eigenvector','pagerank'])
+st.sidebar.markdown("---")
+st.sidebar.caption("All changes automatically update the right panel; edge edits require button click.")
 
 # ------------------------------
-# Functions to build graph & UI helpers
+# Rebuild graph if parameters change
 # ------------------------------
-def build_graph():
+current_params = {
+    'scenario': scenario, 'm': m, 'n': n, 'diagonals': diagonals,
+    'n_org': n_org, 'radius': float(radius), 'extra_ratio': float(extra_ratio),
+    'm_h': m_h, 'n_h': n_h, 'right_n': right_n, 'r_h': float(r_h), 'bridges': bridges
+}
+
+def need_rebuild(last_params, current_params):
+    return last_params != current_params
+
+if 'last_params' not in st.session_state:
+    st.session_state.last_params = {}
+
+if st.session_state.get('G') is None or need_rebuild(st.session_state.last_params, current_params):
+    st.session_state.last_params = current_params.copy()
     if scenario == 'Grid':
-        G,pos = generate_grid(m, n, diagonals=diagonals)
+        G, pos = generate_grid(m, n, diagonals)
     elif scenario == 'Organic':
-        G,pos = generate_organic(n_org, radius, extra_ratio)
+        G, pos = generate_organic(n_org, radius, extra_ratio)
     else:
-        G,pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges)
+        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges)
     st.session_state.G = G
     st.session_state.pos = pos
     st.session_state.cent_before = None
     st.session_state.cent_after = None
     st.session_state.last_build_time = time.time()
 
-def summarize_shift(cent0, cent1):
-    idx = sorted(cent0.keys())
-    v0 = np.array([cent0[i] for i in idx]); v1 = np.array([cent1[i] for i in idx])
-    rho, p = spearmanr(v0, v1)
-    delta = v1 - v0
-    order = np.argsort(-np.abs(delta))[:10]
-    top = [(idx[i], float(delta[i])) for i in order]
-    return rho, p, top
-
-# make sure initial build
-ensure_graph_built = st.sidebar.checkbox("Ensure graph built (internal)", value=True, key="ensure_build")
-if ensure_graph_built:
-    if st.session_state.G is None or recompute:
-        build_graph()
-
-# Node selectors (after graph available)
 G = st.session_state.G
 pos = st.session_state.pos
-node_list = sorted(G.nodes()) if G is not None else []
-u = st.sidebar.selectbox("u", node_list, index=0 if node_list else None)
-v = st.sidebar.selectbox("v", node_list, index=1 if len(node_list)>1 else None)
 
-# Action handlers
-if recompute:
-    build_graph()
-    st.experimental_rerun()
-
-if add_edge_btn:
-    if G is not None and u is not None and v is not None and u != v:
-        if not G.has_edge(u,v):
-            x0,y0 = pos[u]; x1,y1 = pos[v]
-            G.add_edge(u,v, length=np.hypot(x0-x1, y0-y1))
-            # set before/after tracking
-            if st.session_state.cent_before is None:
-                st.session_state.cent_before = compute_centralities(G)
-                st.session_state.cent_after = None
-            else:
-                st.session_state.cent_after = compute_centralities(G)
-    st.experimental_rerun()
-
-if remove_edge_btn:
-    if G is not None and u is not None and v is not None and u != v:
-        if G.has_edge(u,v):
-            G.remove_edge(u,v)
-            if st.session_state.cent_before is None:
-                st.session_state.cent_before = compute_centralities(G)
-                st.session_state.cent_after = None
-            else:
-                st.session_state.cent_after = compute_centralities(G)
-    st.experimental_rerun()
+# Update node selection options
+node_list = sorted(G.nodes())
+u = st.sidebar.selectbox("Node u", node_list, index=0 if node_list else None)
+v = st.sidebar.selectbox("Node v", node_list, index=1 if len(node_list)>1 else None)
 
 # ------------------------------
-# Main layout (two columns)
+# Edge edit handlers
+# ------------------------------
+if add_edge_click and G is not None and u is not None and v is not None and u != v:
+    prev_cent = compute_centralities(G)
+    if not G.has_edge(u,v):
+        x0,y0 = pos[u]; x1,y1 = pos[v]
+        G.add_edge(u,v, length=np.hypot(x0-x1, y0-y1))
+    st.session_state.cent_before = prev_cent
+    st.session_state.cent_after = compute_centralities(G)
+
+if remove_edge_click and G is not None and u is not None and v is not None and u != v:
+    prev_cent = compute_centralities(G)
+    if G.has_edge(u,v):
+        G.remove_edge(u,v)
+    st.session_state.cent_before = prev_cent
+    st.session_state.cent_after = compute_centralities(G)
+
+# ------------------------------
+# Main layout
 # ------------------------------
 left_col, right_col = st.columns([1.2, 1])
 
 with left_col:
-    st.header(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
+    st.subheader(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
     cent = compute_centralities(G)
-    # update session state's centralities if baseline not set
     if st.session_state.cent_before is None:
         st.session_state.cent_before = cent
         st.session_state.cent_after = None
-    else:
-        # leave as is; current cent represents "current" state
-        pass
 
     fig_net = draw_network_matplot(G, pos, cent[central_choice], title=f"{scenario} (colored by {central_choice})")
     st.pyplot(fig_net)
@@ -384,76 +356,61 @@ with left_col:
         axh.set_xlabel('value'); axh.set_ylabel('count')
         st.pyplot(fig_hist)
 
-    # If there is baseline and after, show summary
     if st.session_state.cent_before is not None and st.session_state.cent_after is not None:
-        rho, p, top = summarize_shift(st.session_state.cent_before[central_choice], st.session_state.cent_after[central_choice])
+        rho, p, top = (lambda c0, c1: (spearmanr(
+            np.array([c0[i] for i in sorted(c0.keys())]),
+            np.array([c1[i] for i in sorted(c1.keys())]))[0],
+            spearmanr(
+            np.array([c0[i] for i in sorted(c0.keys())]),
+            np.array([c1[i] for i in sorted(c1.keys())]))[1],
+            sorted([(n, float(c1[n]-c0[n])) for n in sorted(c0.keys())], key=lambda x: -abs(x[1]))[:10]
+        ))(st.session_state.cent_before[central_choice], st.session_state.cent_after[central_choice])
         st.markdown(f"**Spearman rank correlation (before vs after) for {central_choice}:** rho={rho:.3f} (p={p:.3g})")
-        st.markdown("**Top centrality changes (node, Δvalue):**")
+        st.markdown("**Top nodes by change (node, Δvalue):**")
         for nid, dv in top:
             st.write(f"- {nid:>4}: {dv:+.4f}")
 
 with right_col:
-    st.header("Multi-metric dashboard & export")
-
-    # prepare dataframe(s)
+    st.subheader("Multi-metric dashboard & export (auto-update)")
     cent_current = compute_centralities(G)
-    df = centrality_dataframe({k: cent_current[k] for k in CENTRALS})
-    dfz = df.apply(lambda c: (c - c.mean())/(c.std() or 1.0))
-    corr = df.corr(method='spearman')
+    df_all = centrality_dataframe({k: cent_current[k] for k in ['degree','closeness','betweenness','eigenvector','pagerank']})
+    dfz_all = df_all.apply(lambda c: (c - c.mean())/(c.std() or 1.0))
 
-    if show_dashboard_btn:
-        # if we have a before and after, pass reference
-        cent_ref_df = None
-        if st.session_state.cent_before is not None and st.session_state.cent_after is not None:
-            cent_before_df = centrality_dataframe({k: st.session_state.cent_before[k] for k in CENTRALS})
-            cent_after_df = centrality_dataframe({k: st.session_state.cent_after[k] for k in CENTRALS})
-            # compute df (after) and cent_ref (before)
-            df_after = cent_after_df
-            df_before = cent_before_df
-            # create dashboard with after vs before delta
-            sel_metrics = metrics_sel if metrics_sel else CENTRALS
-            df_selected = df_after[sel_metrics]
-            dfz_selected = (df_selected - df_selected.mean())/(df_selected.std() or 1.0)
-            corr_sel = df_selected.corr(method='spearman')
-            fig_dash = dashboard_plot(df_selected, dfz_selected, corr_sel, title_prefix=f'{scenario}', cent_ref=df_before[sel_metrics])
-            st.pyplot(fig_dash)
-            # allow CSV export
-            st.session_state.df_export = df_selected
-            st.session_state.dfz_export = dfz_selected
-            st.session_state.corr_export = corr_sel
-        else:
-            sel_metrics = metrics_sel if metrics_sel else CENTRALS
-            df_selected = df[sel_metrics]
-            dfz_selected = dfz[sel_metrics]
-            corr_sel = df_selected.corr(method='spearman')
-            fig_dash = dashboard_plot(df_selected, dfz_selected, corr_sel, title_prefix=f'{scenario}', cent_ref=None)
-            st.pyplot(fig_dash)
-            st.session_state.df_export = df_selected
-            st.session_state.dfz_export = dfz_selected
-            st.session_state.corr_export = corr_sel
+    sel_metrics = metrics_sel if metrics_sel else ['degree','closeness','betweenness','eigenvector','pagerank']
+    df_selected = df_all[sel_metrics]
+    dfz_selected = dfz_all[sel_metrics]
 
-    # Export CSVs or provide downloads
-    if export_csv_btn:
-        if hasattr(st.session_state, 'df_export'):
-            ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
-            csv1 = st.session_state.df_export.to_csv(index=True)
-            csv2 = st.session_state.dfz_export.to_csv(index=True)
-            csv3 = st.session_state.corr_export.to_csv(index=True)
-            st.download_button("Download centralities CSV", data=csv1, file_name=f'centralities_{ts}.csv', mime='text/csv')
-            st.download_button("Download centralities_z CSV", data=csv2, file_name=f'centralities_z_{ts}.csv', mime='text/csv')
-            st.download_button("Download centralities_corr CSV", data=csv3, file_name=f'centralities_corr_{ts}.csv', mime='text/csv')
-            st.success("Prepared CSVs for download.")
-        else:
-            st.warning("No data to export. Generate dashboard first.")
+    cent_ref_df = None
+    if st.session_state.cent_before is not None and st.session_state.cent_after is not None:
+        cent_ref_df = centrality_dataframe({k: st.session_state.cent_before[k] for k in ['degree','closeness','betweenness','eigenvector','pagerank']})[sel_metrics]
+        df_after = centrality_dataframe({k: st.session_state.cent_after[k] for k in ['degree','closeness','betweenness','eigenvector','pagerank']})[sel_metrics]
+        df_for_dash = df_after
+        dfz_for_dash = (df_for_dash - df_for_dash.mean())/(df_for_dash.std() or 1.0)
+        corr_for_dash = df_for_dash.corr(method='spearman')
+        fig_dash = dashboard_plot(df_for_dash, dfz_for_dash, corr_for_dash, title_prefix=f'{scenario}', cent_ref=cent_ref_df)
+    else:
+        corr_sel = df_selected.corr(method='spearman')
+        fig_dash = dashboard_plot(df_selected, dfz_selected, corr_sel, title_prefix=f'{scenario}', cent_ref=None)
 
-# Also add small "state inspector"
+    st.pyplot(fig_dash)
+
+    ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+    csv1 = df_selected.to_csv(index=True)
+    csv2 = dfz_selected.to_csv(index=True)
+    csv3 = df_selected.corr(method='spearman').to_csv(index=True)
+
+    st.download_button("Download centralities CSV", data=csv1, file_name=f'centralities_{ts}.csv', mime='text/csv')
+    st.download_button("Download centralities_z CSV", data=csv2, file_name=f'centralities_z_{ts}.csv', mime='text/csv')
+    st.download_button("Download centralities_corr CSV", data=csv3, file_name=f'centralities_corr_{ts}.csv', mime='text/csv')
+
+# ------------------------------
+# Debug / session state
+# ------------------------------
 with st.expander("Session state (debug)"):
     ss = {
         'nodes': G.number_of_nodes(),
         'edges': G.number_of_edges(),
-        'last_build_time': st.session_state.last_build_time
+        'last_build_time': st.session_state.get('last_build_time'),
+        'last_params_snapshot': st.session_state.get('last_params')
     }
     st.json(ss)
-
-st.sidebar.markdown("---")
-st.sidebar.caption("Controls ready. Use sidebar to pick a scenario, add/remove edges, and view dashboard. First 'Recompute' sets baseline automatically.")
