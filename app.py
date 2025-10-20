@@ -128,7 +128,7 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     angles = np.linspace(0,2*np.pi,len(labels),endpoint=False)
     angles_c = np.concatenate([angles,[angles[0]]])
     means_c = np.concatenate([dfz.mean(axis=0).values,[dfz.mean(axis=0).values[0]]])
-    fig,axes = plt.subplots(4,1,figsize=(8,20),constrained_layout=True)
+    fig,axes = plt.subplots(3,1,figsize=(8,20),constrained_layout=True)
     # Radar
     ax0 = plt.subplot(3,1,1,polar=True)
     ax0.plot(angles_c,means_c,linewidth=2)
@@ -156,7 +156,7 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     else:
         ax2.text(0.5,0.5,'Select ≥2 metrics',ha='center',va='center'); ax2.axis('off')
 
-    fig.suptitle(f'{title_prefix} Multi-metric dashboard',fontsize=14)
+    #fig.suptitle(f'{title_prefix} Multi-metric dashboard',fontsize=14)
     return fig
 
 def dashboard_compare(df_main, df_compare, title_prefix='', main_seed=None, compare_seed=None):
