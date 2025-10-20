@@ -131,6 +131,7 @@ def compute_centralities(G):
         cent['pagerank'] = nx.pagerank(G)
     return cent
 
+    
 # ------------------------------
 # Helpers for visuals & dataframes
 # ------------------------------
@@ -253,48 +254,54 @@ st.title("Spatial Network Analysis")
 # Sidebar: Scenario & parameters
 # ------------------------------
 st.sidebar.title("Scenario & Parameters")
+
 scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
-central_choice = st.sidebar.selectbox("Color by centrality",
-                                      ['degree','closeness','betweenness','eigenvector','pagerank'],
-                                      index=2)
+central_choice = st.sidebar.selectbox(
+    "Color by centrality", 
+    ['degree','closeness','betweenness','eigenvector','pagerank'], index=2
+)
 
 # Default parameters
-params = {
-    'm': 10, 'n': 10, 'diagonals': False,
-    'n_org': 140, 'radius': 0.15, 'extra_ratio': 0.15,
-    'm_h': 8, 'n_h': 8, 'right_n': 80, 'r_h': 0.18, 'bridges': 8
-}
+m = 10; n = 10; diagonals = False
+n_org = 140; radius = 0.15; extra_ratio = 0.15
+m_h = 8; n_h = 8; right_n = 80; r_h = 0.18; bridges = 8
 
 # Scenario-specific sliders
 if scenario == 'Grid':
     st.sidebar.markdown("**Grid parameters**")
-    params['m'] = st.sidebar.slider("Grid m", 3, 20, params['m'])
-    params['n'] = st.sidebar.slider("Grid n", 3, 20, params['n'])
-    params['diagonals'] = st.sidebar.checkbox("8-neighbor (diagonals)", value=params['diagonals'])
+    m = st.sidebar.slider("Grid m", 3, 20, m)
+    n = st.sidebar.slider("Grid n", 3, 20, n)
+    diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=diagonals)
 elif scenario == 'Organic':
     st.sidebar.markdown("**Organic parameters**")
-    params['n_org'] = st.sidebar.slider("Organic nodes", 40, 400, params['n_org'], step=10)
-    params['radius'] = st.sidebar.slider("Radius", 0.05, 0.3, params['radius'], step=0.01)
-    params['extra_ratio'] = st.sidebar.slider("Extra ratio", 0.0, 0.5, params['extra_ratio'], step=0.05)
-else:
+    n_org = st.sidebar.slider("Organic nodes", 40, 400, n_org, step=10)
+    radius = st.sidebar.slider("Radius", 0.05, 0.3, radius, step=0.01)
+    extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, extra_ratio, step=0.05)
+else:  # Hybrid
     st.sidebar.markdown("**Hybrid parameters**")
-    params['m_h'] = st.sidebar.slider("Hybrid grid m", 4, 16, params['m_h'])
-    params['n_h'] = st.sidebar.slider("Hybrid grid n", 4, 16, params['n_h'])
-    params['right_n'] = st.sidebar.slider("Right nodes", 20, 300, params['right_n'], step=10)
-    params['r_h'] = st.sidebar.slider("Right radius", 0.06, 0.3, params['r_h'], step=0.01)
-    params['bridges'] = st.sidebar.slider("Bridges", 1, 30, params['bridges'])
+    m_h = st.sidebar.slider("Hybrid grid m", 4, 16, m_h)
+    n_h = st.sidebar.slider("Hybrid grid n", 4, 16, n_h)
+    right_n = st.sidebar.slider("Right nodes", 20, 300, right_n, step=10)
+    r_h = st.sidebar.slider("Right radius", 0.06, 0.3, r_h, step=0.01)
+    bridges = st.sidebar.slider("Bridges", 1, 30, bridges)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Multi-metric dashboard**")
-metrics_sel = st.sidebar.multiselect("Select metrics",
-                                     ['degree','closeness','betweenness','eigenvector','pagerank'],
-                                     default=['degree','closeness','betweenness','eigenvector','pagerank'])
+metrics_sel = st.sidebar.multiselect(
+    "Select metrics",
+    ['degree','closeness','betweenness','eigenvector','pagerank'],
+    default=['degree','closeness','betweenness','eigenvector','pagerank']
+)
+st.sidebar.markdown("---")
 
 # ------------------------------
 # Rebuild graph if parameters changed
 # ------------------------------
-current_params = params.copy()
-current_params['scenario'] = scenario
+current_params = {
+    'scenario': scenario, 'm': m, 'n': n, 'diagonals': diagonals,
+    'n_org': n_org, 'radius': float(radius), 'extra_ratio': float(extra_ratio),
+    'm_h': m_h, 'n_h': n_h, 'right_n': right_n, 'r_h': float(r_h), 'bridges': bridges
+}
 
 def need_rebuild(last_params, current_params):
     return last_params != current_params
@@ -302,15 +309,14 @@ def need_rebuild(last_params, current_params):
 if 'last_params' not in st.session_state:
     st.session_state.last_params = {}
 
-if 'G' not in st.session_state or need_rebuild(st.session_state.last_params, current_params):
+if st.session_state.get('G') is None or need_rebuild(st.session_state.last_params, current_params):
     st.session_state.last_params = current_params.copy()
     if scenario == 'Grid':
-        G, pos = generate_grid(params['m'], params['n'], params['diagonals'])
+        G, pos = generate_grid(m, n, diagonals)
     elif scenario == 'Organic':
-        G, pos = generate_organic(params['n_org'], params['radius'], params['extra_ratio'])
+        G, pos = generate_organic(n_org, radius, extra_ratio)
     else:
-        G, pos = generate_hybrid(params['m_h'], params['n_h'], params['right_n'],
-                                  params['r_h'], params['bridges'])
+        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges)
     st.session_state.G = G
     st.session_state.pos = pos
     st.session_state.cent_before = None
@@ -319,36 +325,36 @@ if 'G' not in st.session_state or need_rebuild(st.session_state.last_params, cur
 
 G = st.session_state.G
 pos = st.session_state.pos
+node_list = sorted(G.nodes())
 
 # ------------------------------
 # Sidebar: Edge editing
 # ------------------------------
-node_list = sorted(G.nodes())
-if node_list:
-    u_default = 0
-    v_default = 1 if len(node_list) > 1 else 0
-    u = st.sidebar.selectbox("Node u", node_list, index=u_default)
-    v = st.sidebar.selectbox("Node v", node_list, index=v_default)
-else:
-    u = v = None
-
+st.sidebar.markdown("**Adjacency editing (select nodes, click button to apply)**")
+u = st.sidebar.selectbox("Node u", node_list, index=0 if node_list else None)
+v = st.sidebar.selectbox("Node v", node_list, index=1 if len(node_list) > 1 else None)
 add_edge_click = st.sidebar.button("Add edge")
 remove_edge_click = st.sidebar.button("Remove edge")
 
-if add_edge_click and G is not None and u is not None and v is not None and u != v:
-    prev_cent = compute_centralities(G)
-    if not G.has_edge(u, v):
-        x0, y0 = pos[u]; x1, y1 = pos[v]
-        G.add_edge(u, v, length=np.hypot(x0-x1, y0-y1))
-    st.session_state.cent_before = prev_cent
-    st.session_state.cent_after = compute_centralities(G)
+if G is not None and u is not None and v is not None and u != v:
+    if add_edge_click:
+        prev_cent = compute_centralities(G)
+        prev_cent = {k: dict(vv) for k, vv in prev_cent.items()}
+        if not G.has_edge(u, v):
+            x0, y0 = pos[u]; x1, y1 = pos[v]
+            G.add_edge(u, v, length=np.hypot(x0-x1, y0-y1))
+        st.session_state.cent_before = prev_cent
+        new_cent = compute_centralities(G)
+        st.session_state.cent_after = {k: dict(vv) for k, vv in new_cent.items()}
 
-if remove_edge_click and G is not None and u is not None and v is not None and u != v:
-    prev_cent = compute_centralities(G)
-    if G.has_edge(u, v):
-        G.remove_edge(u, v)
-    st.session_state.cent_before = prev_cent
-    st.session_state.cent_after = compute_centralities(G)
+    if remove_edge_click:
+        prev_cent = compute_centralities(G)
+        prev_cent = {k: dict(vv) for k, vv in prev_cent.items()}
+        if G.has_edge(u, v):
+            G.remove_edge(u, v)
+        st.session_state.cent_before = prev_cent
+        new_cent = compute_centralities(G)
+        st.session_state.cent_after = {k: dict(vv) for k, vv in new_cent.items()}
 
 # ------------------------------
 # Main layout
@@ -356,14 +362,16 @@ if remove_edge_click and G is not None and u is not None and v is not None and u
 left_col, right_col = st.columns([1.2, 1])
 
 with left_col:
-    st.subheader(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
+    st.subheader(f"{scenario}")
     cent = compute_centralities(G)
     if st.session_state.cent_before is None:
         st.session_state.cent_before = cent
         st.session_state.cent_after = None
 
-    fig_net = draw_network_matplot(G, pos, cent[central_choice],
-                                   title=f"{scenario} (colored by {central_choice})")
+    fig_net = draw_network_matplot(
+        G, pos, cent[central_choice],
+        title=f"{scenario} nodes={G.number_of_nodes()}, edges={G.number_of_edges()} (colored by {central_choice})"
+    )
     st.pyplot(fig_net)
 
     fig_adj = show_adjacency_figure(G)
@@ -372,8 +380,8 @@ with left_col:
     vals = np.array(list(cent[central_choice].values()))
     fig_hist, axh = plt.subplots(figsize=(6,2.5))
     axh.hist(vals, bins=20, alpha=0.8)
-    axh.set_title(f'{central_choice} distribution', fontsize=10)
-    axh.set_xlabel('value', fontsize=9); axh.set_ylabel('count', fontsize=9)
+    axh.set_title(f'{central_choice} distribution')
+    axh.set_xlabel('value'); axh.set_ylabel('count')
     st.pyplot(fig_hist)
 
 with right_col:
