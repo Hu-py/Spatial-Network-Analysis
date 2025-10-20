@@ -313,17 +313,22 @@ if 'last_params' not in st.session_state:
 rand_seed = random.randint(0, 1_000_000)
 st.sidebar.markdown(f"**Random seed:** `{rand_seed}`")
 
+np.random.seed(rand_seed)
+random.seed(rand_seed)
+
+
+    
 # ------------------------------
 # Rebuild graph if parameters changed
 # ------------------------------
 if st.session_state.get('G') is None or need_rebuild(st.session_state.last_params, current_params):
     st.session_state.last_params = current_params.copy()
     if scenario == 'Grid':
-        G, pos = generate_grid(m, n, diagonals, seed=rand_seed)
+        G, pos = generate_grid(m, n, diagonals)
     elif scenario == 'Organic':
-        G, pos = generate_organic(n_org, radius, extra_ratio, seed=rand_seed)
+        G, pos = generate_organic(n_org, radius, extra_ratio)
     else:
-        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges, seed=rand_seed)
+        G, pos = generate_hybrid(m_h, n_h, right_n, r_h, bridges)
     st.session_state.G = G
     st.session_state.pos = pos
     st.session_state.cent_before = None
