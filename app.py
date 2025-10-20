@@ -168,29 +168,35 @@ def centrality_dataframe(cent_dict):
         rows.append(row)
     return pd.DataFrame(rows).set_index('node')
 
-def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
+def dashboard(df, dfz, corr, title_prefix='', cent_ref=None):
     labels = list(dfz.columns)
     means = dfz.mean(axis=0).values
     angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False)
     means_c = np.concatenate([means, [means[0]]])
     angles_c = np.concatenate([angles, [angles[0]]])
 
-    fig = plt.figure(figsize=(14,8))
-    gs = fig.add_gridspec(2, 2, height_ratios=[1,1.2], width_ratios=[1,1])
-    ax0 = fig.add_subplot(gs[0,0], polar=True)
+    fig, axes = plt.subplots(4, 1, figsize=(8, 20))  # 4 rows, 1 column
+
+    # 1. Radar
+    ax0 = axes[0]
     ax0.plot(angles_c, means_c, linewidth=2)
     ax0.fill(angles_c, means_c, alpha=0.2)
-    ax0.set_xticks(angles); ax0.set_xticklabels(labels)
-    ax0.set_title(f'{title_prefix} Mean normalized centralities (z)')
+    ax0.set_xticks(angles)
+    ax0.set_xticklabels(labels)
+    ax0.set_title(f'{title_prefix} Mean normalized centralities (z)', fontsize=12)
 
-    ax1 = fig.add_subplot(gs[0,1])
+    # 2. Correlation heatmap
+    ax1 = axes[1]
     im = ax1.imshow(corr, vmin=-1, vmax=1, cmap='coolwarm')
-    ax1.set_xticks(range(len(labels))); ax1.set_xticklabels(labels, rotation=45, ha='right')
-    ax1.set_yticks(range(len(labels))); ax1.set_yticklabels(labels)
-    ax1.set_title('Spearman correlation among metrics')
+    ax1.set_xticks(range(len(labels)))
+    ax1.set_xticklabels(labels, rotation=45, ha='right')
+    ax1.set_yticks(range(len(labels)))
+    ax1.set_yticklabels(labels)
+    ax1.set_title('Spearman correlation among metrics', fontsize=12)
     fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
 
-    ax2 = fig.add_subplot(gs[1,0])
+    # 3. Rank scatter
+    ax2 = axes[2]
     if len(labels) >= 2:
         a, b = labels[0], labels[1]
         ax2.scatter(df[a].rank(), df[b].rank(), alpha=0.6)
@@ -201,19 +207,22 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
         ax2.text(0.5, 0.5, 'Select ≥2 metrics', ha='center', va='center')
         ax2.axis('off')
 
-    ax3 = fig.add_subplot(gs[1,1])
+    # 4. Delta centrality
+    ax3 = axes[3]
     if cent_ref is not None:
         delta_mean = (df - cent_ref).mean(axis=0)
         ax3.bar(range(len(labels)), delta_mean.values)
-        ax3.set_xticks(range(len(labels))); ax3.set_xticklabels(labels, rotation=45, ha='right')
+        ax3.set_xticks(range(len(labels)))
+        ax3.set_xticklabels(labels, rotation=45, ha='right')
         ax3.set_title('Mean Δ centrality (after − before)')
     else:
-        ax3.text(0.5, 0.5, 'No reference (baseline) provided', ha='center', va='center')
+        ax3.text(0.5, 0.5, 'No baseline provided', ha='center', va='center')
         ax3.axis('off')
 
     fig.suptitle(f'{title_prefix} Multi-metric dashboard', fontsize=14)
     plt.tight_layout()
     return fig
+
 
 # ------------------------------
 # Session state initialization
@@ -371,7 +380,7 @@ with left_col:
             st.write(f"- {nid:>4}: {dv:+.4f}")
 
 with right_col:
-    st.subheader("Multi-metric dashboard & export (auto-update)")
+    st.subheader("Multi-metric dashboard & export")
     cent_current = compute_centralities(G)
     df_all = centrality_dataframe({k: cent_current[k] for k in ['degree','closeness','betweenness','eigenvector','pagerank']})
     dfz_all = df_all.apply(lambda c: (c - c.mean())/(c.std() or 1.0))
