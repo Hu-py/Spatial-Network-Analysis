@@ -144,7 +144,8 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     
     # 移除极坐标外面的矩形边框
     ax0.spines['polar'].set_visible(False)  # 去掉极坐标的边框
-
+    ax0.set_frame_on(False)       # 关闭整个Axes的边框
+    ax0.patch.set_visible(False)
     
     # Heatmap
     ax1 = axes[1]
@@ -155,6 +156,8 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     ax1.set_yticklabels(labels)
     ax1.set_title('Spearman correlation among metrics')
     fig.colorbar(im,ax=ax1,fraction=0.046,pad=0.04)
+ 
+
     # Rank scatter
     ax2 = axes[2]
     if len(labels)>=2:
