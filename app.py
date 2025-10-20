@@ -158,11 +158,16 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     # Delta centrality
     ax3 = axes[3]
     if cent_ref is not None:
-        delta_mean=(df-cent_ref).mean(axis=0)
-        ax3.bar(range(len(labels)),delta_mean.values)
-        ax3.set_xticks(range(len(labels)))
-        ax3.set_xticklabels(labels,rotation=45,ha='right')
-        ax3.set_title(f'Mean Δ centrality (after − before)\n(main seed={main_seed}, baseline seed={base_seed})')
+        width = 0.35  # 条宽
+        x = np.arange(len(labels))
+        main_vals = df.values.mean(axis=0)
+        base_vals = cent_ref.values.mean(axis=0)
+        ax3.bar(x - width/2, main_vals, width, label='Main', color='tab:blue', alpha=0.7)
+        ax3.bar(x + width/2, base_vals, width, label='Baseline', color='tab:orange', alpha=0.7)
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(labels, rotation=45, ha='right')
+        ax3.set_title(f'Mean centrality comparison\n(main seed={main_seed}, baseline seed={base_seed})')
+        ax3.legend()
     else:
         ax3.text(0.5,0.5,'No baseline provided',ha='center',va='center'); ax3.axis('off')
     fig.suptitle(f'{title_prefix} Multi-metric dashboard',fontsize=14)
@@ -229,7 +234,7 @@ dfz_selected = dfz_main[CENTRALS]
 # ------------------------------
 # Display network & dashboard
 # ------------------------------
-left_col, right_col = st.columns([1.5, 1])
+left_col, right_col = st.columns([1.2, 1])
 
 with left_col:
     st.subheader(f"{scenario} network (main seed)")
