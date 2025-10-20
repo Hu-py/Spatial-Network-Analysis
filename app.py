@@ -256,6 +256,9 @@ st.title("Spatial Network Analysis")
 # ------------------------------
 st.sidebar.title("Scenario & Parameters")
 
+rand_seed = random.randint(0, 1_000_000)
+st.sidebar.markdown(f"**Random seed:** `{rand_seed}`")
+
 scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
 central_choice = st.sidebar.selectbox(
     "Color by centrality", 
@@ -310,8 +313,6 @@ def need_rebuild(last_params, current_params):
 if 'last_params' not in st.session_state:
     st.session_state.last_params = {}
 
-rand_seed = random.randint(0, 1_000_000)
-st.sidebar.markdown(f"**Random seed:** `{rand_seed}`")
 
 np.random.seed(rand_seed)
 random.seed(rand_seed)
