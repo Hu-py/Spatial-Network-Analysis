@@ -241,7 +241,7 @@ fig_dash = dashboard_plot(df_selected, dfz_selected, corr_main,
                           cent_ref=df_base[CENTRALS],
                           main_seed=rand_seed_main,
                           base_seed=rand_seed_base)
-st.pyplot(fig_dashst.pyplot(fig_dash)
+st.pyplot(fig_dash)
 
 # ------------------------------
 # Centrality distributions
