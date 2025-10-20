@@ -173,6 +173,23 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     fig.suptitle(f'{title_prefix} Multi-metric dashboard',fontsize=14)
     return fig
 
+def dashboard_compare(df_main, df_compare, title_prefix='', main_seed=None, compare_seed=None):
+    labels = df_main.columns.tolist()
+    x = np.arange(len(labels))
+    width = 0.35
+    main_vals = df_main.mean(axis=0).values
+    compare_vals = df_compare.mean(axis=0).values
+
+    fig, ax = plt.subplots(figsize=(8,4))
+    ax.bar(x - width/2, main_vals, width, label='Main', color='tab:blue', alpha=0.7)
+    ax.bar(x + width/2, compare_vals, width, label='Comparison', color='tab:orange', alpha=0.7)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, rotation=45, ha='right')
+    ax.set_title(f'Mean centrality comparison\n(main seed={main_seed}, comparison seed={compare_seed})')
+    ax.legend()
+    fig.suptitle(f'{title_prefix} Comparison', fontsize=14)
+    return fig
+    
 # ------------------------------
 # Streamlit UI
 # ------------------------------
@@ -253,6 +270,8 @@ with left_col:
     ax_adj.set_xlabel('node'); ax_adj.set_ylabel('node')
     st.pyplot(fig_adj)
 
+
+with right_col:
     st.subheader(f"{central_choice} distribution (main seed)")
     vals = np.array(list(cent_main[central_choice].values()))
     fig_hist, axh = plt.subplots(figsize=(6,2.5))
@@ -260,8 +279,8 @@ with left_col:
     axh.set_title(f'{central_choice} distribution')
     axh.set_xlabel('value'); axh.set_ylabel('count')
     st.pyplot(fig_hist)
-    
-with right_col:
+
+
     st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
     corr_main = df_selected.corr(method='spearman')
     fig_dash = dashboard_plot(
@@ -273,30 +292,56 @@ with right_col:
     )
     st.pyplot(fig_dash)
 
-    st.subheader(f"Baseline network ({scenario}, seed={rand_seed_base})")
+    st.subheader(f"Comparison network ({scenario}, seed={rand_seed_base})")
     fig_base_net = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
                                         title=f"{scenario} baseline network: nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()}, seed={rand_seed_base}")
     st.pyplot(fig_base_net)
 
+left_col, mid_col, right_col = st.columns([1,1,1])
+
+# 左：主网络
+with left_col:
+    st.markdown("Main network")
+    fig_net = draw_network_matplot(G_main, pos_main, cent_main[central_choice],
+                                   title=f"{scenario} nodes={G_main.number_of_nodes()}, edges={G_main.number_of_edges()} (colored by {central_choice})")
+    st.pyplot(fig_net)
+
+# 中：对比图
+with mid_col:
+    st.pyplot(fig_dash)
+    st.markdown(f"**Comparison network ({scenario}, seed={rand_seed_base})**")
+    fig_net_cmp = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
+                                       title=f"{scenario} nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()} (colored by {central_choice})")
+    st.pyplot(fig_net_cmp)
+    
+# 右： 对比网络
+with right_col:
+    st.subheader("Comparison network & centralities")
+    fig_cmp = dashboard_compare(df_selected, df_base[CENTRALS],
+                                title_prefix=scenario,
+                                main_seed=rand_seed_main,
+                                compare_seed=rand_seed_base)
+    st.pyplot(fig_cmp)
 
 
-    # ------------------------------
-    # Export CSVs
-    # ------------------------------
-    ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
 
-    st.download_button("Download main centralities CSV",
-                       data=df_main.to_csv(index=True),
-                       file_name=f'centralities_main_{ts}.csv',
-                       mime='text/csv')
+# ------------------------------
+# Export CSVs
+# ------------------------------
+ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
 
-    st.download_button("Download baseline centralities CSV",
-                       data=df_base.to_csv(index=True),
-                       file_name=f'centralities_baseline_{ts}.csv',
-                       mime='text/csv')
+st.download_button("Download main centralities CSV",
+               data=df_main.to_csv(index=True),
+               file_name=f'centralities_main_{ts}.csv',
+               mime='text/csv')
 
-    st.download_button("Download Δ centralities CSV",
-                       data=(df_selected - df_base[CENTRALS]).to_csv(index=True),
-                       file_name=f'centralities_delta_{ts}.csv',
-                       mime='text/csv')
+st.download_button("Download baseline centralities CSV",
+               data=df_base.to_csv(index=True),
+               file_name=f'centralities_baseline_{ts}.csv',
+               mime='text/csv')
+
+st.download_button("Download Δ centralities CSV",
+               data=(df_selected - df_base[CENTRALS]).to_csv(index=True),
+               file_name=f'centralities_delta_{ts}.csv',
+               mime='text/csv')
 
