@@ -229,49 +229,53 @@ dfz_selected = dfz_main[CENTRALS]
 # ------------------------------
 # Display network & dashboard
 # ------------------------------
-st.subheader(f"{scenario} network (main seed)")
-fig_net = draw_network_matplot(G_main,pos_main,cent_main[central_choice],
-                               title=f"{scenario} nodes={G_main.number_of_nodes()}, edges={G_main.number_of_edges()} (colored by {central_choice})")
-st.pyplot(fig_net)
+left_col, right_col = st.columns([1.5, 1])
 
-st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
-corr_main = df_selected.corr(method='spearman')
-fig_dash = dashboard_plot(df_selected, dfz_selected, corr_main,
-                          title_prefix=scenario,
-                          cent_ref=df_base[CENTRALS],
-                          main_seed=rand_seed_main,
-                          base_seed=rand_seed_base)
-st.pyplot(fig_dash)
+with left_col:
+    st.subheader(f"{scenario} network (main seed)")
+    fig_net = draw_network_matplot(
+        G_main, pos_main, cent_main[central_choice],
+        title=f"{scenario} nodes={G_main.number_of_nodes()}, edges={G_main.number_of_edges()} (colored by {central_choice})"
+    )
+    st.pyplot(fig_net)
 
-# ------------------------------
-# Centrality distributions
-# ------------------------------
-st.subheader(f"{central_choice} distribution (main seed)")
-vals = np.array(list(cent_main[central_choice].values()))
-fig_hist, axh = plt.subplots(figsize=(6,2.5))
-axh.hist(vals, bins=20, alpha=0.8)
-axh.set_title(f'{central_choice} distribution')
-axh.set_xlabel('value'); axh.set_ylabel('count')
-st.pyplot(fig_hist)
+with right_col:
+    st.subheader("Multi-metric dashboard & Δ centrality vs baseline")
+    corr_main = df_selected.corr(method='spearman')
+    fig_dash = dashboard_plot(
+        df_selected, dfz_selected, corr_main,
+        title_prefix=scenario,
+        cent_ref=df_base[CENTRALS],
+        main_seed=rand_seed_main,
+        base_seed=rand_seed_base
+    )
+    st.pyplot(fig_dash)
 
-# ------------------------------
-# Export CSVs
-# ------------------------------
-ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
+    st.subheader(f"{central_choice} distribution (main seed)")
+    vals = np.array(list(cent_main[central_choice].values()))
+    fig_hist, axh = plt.subplots(figsize=(6,2.5))
+    axh.hist(vals, bins=20, alpha=0.8)
+    axh.set_title(f'{central_choice} distribution')
+    axh.set_xlabel('value'); axh.set_ylabel('count')
+    st.pyplot(fig_hist)
 
-st.download_button("Download main centralities CSV",
-                   data=df_main.to_csv(index=True),
-                   file_name=f'centralities_main_{ts}.csv',
-                   mime='text/csv')
+    # ------------------------------
+    # Export CSVs
+    # ------------------------------
+    ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
 
-st.download_button("Download baseline centralities CSV",
-                   data=df_base.to_csv(index=True),
-                   file_name=f'centralities_baseline_{ts}.csv',
-                   mime='text/csv')
+    st.download_button("Download main centralities CSV",
+                       data=df_main.to_csv(index=True),
+                       file_name=f'centralities_main_{ts}.csv',
+                       mime='text/csv')
 
-st.download_button("Download Δ centralities CSV",
-                   data=(df_selected - df_base[CENTRALS]).to_csv(index=True),
-                   file_name=f'centralities_delta_{ts}.csv',
-                   mime='text/csv')
+    st.download_button("Download baseline centralities CSV",
+                       data=df_base.to_csv(index=True),
+                       file_name=f'centralities_baseline_{ts}.csv',
+                       mime='text/csv')
 
-st.success("✅ Graph, multi-metric dashboard, and CSVs ready for download!")
+    st.download_button("Download Δ centralities CSV",
+                       data=(df_selected - df_base[CENTRALS]).to_csv(index=True),
+                       file_name=f'centralities_delta_{ts}.csv',
+                       mime='text/csv')
+
