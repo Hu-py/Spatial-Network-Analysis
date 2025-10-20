@@ -223,9 +223,9 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
         ax3.set_xticks(range(len(labels)))
         ax3.set_xticklabels(labels, rotation=45, ha='right')
         ax3.set_title('Mean Δ centrality (after − before)')
-    else:
-        ax3.text(0.5, 0.5, 'No baseline provided', ha='center', va='center')
-        ax3.axis('off')
+    #else:
+        #ax3.text(0.5, 0.5, 'No baseline provided', ha='center', va='center')
+        #ax3.axis('off')
 
     fig.suptitle(f'{title_prefix} Multi-metric dashboard', fontsize=14)
 
@@ -329,14 +329,14 @@ pos = st.session_state.pos
 left_col, right_col = st.columns([1.2, 1])
 
 with left_col:
-    st.subheader(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
+    #st.subheader(f"{scenario} — nodes={G.number_of_nodes()}, edges={G.number_of_edges()}")
     cent = compute_centralities(G)
     if st.session_state.cent_before is None:
         st.session_state.cent_before = cent
         st.session_state.cent_after = None
 
     fig_net = draw_network_matplot(G, pos, cent[central_choice],
-                                   title=f"{scenario} (colored by {central_choice})")
+                                   title=f"{scenario} {G.number_of_nodes()}, edges={G.number_of_edges()} (colored by {central_choice})")
     st.pyplot(fig_net)
 
     # Adjacency matrix
