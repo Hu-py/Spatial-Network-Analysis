@@ -430,16 +430,3 @@ with right_col:
     st.download_button("Download centralities_z CSV", data=csv2, file_name=f'centralities_z_{ts}.csv', mime='text/csv')
     st.download_button("Download centralities_corr CSV", data=csv3, file_name=f'centralities_corr_{ts}.csv', mime='text/csv')
 
-'''
-# ------------------------------
-# Debug / session state
-# ------------------------------
-with st.expander("Session state (debug)"):
-    ss = {
-        'nodes': G.number_of_nodes(),
-        'edges': G.number_of_edges(),
-        'last_build_time': st.session_state.get('last_build_time'),
-        'last_params_snapshot': st.session_state.get('last_params')
-    }
-    st.json(ss)
-'''
