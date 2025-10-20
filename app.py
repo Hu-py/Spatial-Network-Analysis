@@ -260,21 +260,21 @@ central_choice = st.sidebar.selectbox("Color by centrality", ['degree','closenes
 # Grid parameters
 if scenario == 'Grid':
     st.sidebar.markdown("**Grid parameters**")
-    m = st.sidebar.slider("Grid m", 3, 20, 10)
-    n = st.sidebar.slider("Grid n", 3, 20, 10)
-    diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=False)
+    m = st.sidebar.slider("Grid m", 3, 20, m)
+    n = st.sidebar.slider("Grid n", 3, 20, n)
+    diagonals = st.sidebar.checkbox("8-neighbor (diagonals)", value=diagonals)
 elif scenario == 'Organic':
     st.sidebar.markdown("**Organic parameters**")
-    n_org = st.sidebar.slider("Organic nodes", 40, 400, 140, step=10)
-    radius = st.sidebar.slider("Radius", 0.05, 0.3, 0.15, step=0.01)
-    extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, 0.15, step=0.05)
+    n_org = st.sidebar.slider("Organic nodes", 40, 400, n_org, step=10)
+    radius = st.sidebar.slider("Radius", 0.05, 0.3, radius, step=0.01)
+    extra_ratio = st.sidebar.slider("Extra ratio", 0.0, 0.5, extra_ratio, step=0.05)
 else:  # Hybrid
     st.sidebar.markdown("**Hybrid parameters**")
-    m_h = st.sidebar.slider("Hybrid grid m", 4, 16, 8)
-    n_h = st.sidebar.slider("Hybrid grid n", 4, 16, 8)
-    right_n = st.sidebar.slider("Right nodes", 20, 300, 80, step=10)
-    r_h = st.sidebar.slider("Right radius", 0.06, 0.3, 0.18, step=0.01)
-    bridges = st.sidebar.slider("Bridges", 1, 30, 8)
+    m_h = st.sidebar.slider("Hybrid grid m", 4, 16, m_h)
+    n_h = st.sidebar.slider("Hybrid grid n", 4, 16, n_h)
+    right_n = st.sidebar.slider("Right nodes", 20, 300, right_n, step=10)
+    r_h = st.sidebar.slider("Right radius", 0.06, 0.3, r_h, step=0.01)
+    bridges = st.sidebar.slider("Bridges", 1, 30, bridges)
 
 
 st.sidebar.markdown("---")
