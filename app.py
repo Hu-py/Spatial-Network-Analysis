@@ -175,18 +175,24 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
     means_c = np.concatenate([means, [means[0]]])
     angles_c = np.concatenate([angles, [angles[0]]])
 
-    fig, axes = plt.subplots(4, 1, figsize=(8, 20))  # 4 rows, 1 column
+    labels = df.columns.tolist()
+    angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False)
+    angles_c = np.concatenate([angles, [angles[0]]])  # 闭合
+    means_c = np.concatenate([dfz.mean(axis=0).values, [dfz.mean(axis=0).values[0]]])
 
-    ax0 = axes[0]  
-    ax0 = plt.subplot(ax0.get_subplotspec(), polar=True)  # 保持原位置，同时启用极坐标
+    fig, axes = plt.subplots(4, 1, figsize=(8, 20), constrained_layout=True)
+
+    # ------------------ 1. Radar ------------------
+    ax0 = plt.subplot(4, 1, 1, polar=True)
     ax0.plot(angles_c, means_c, linewidth=2)
     ax0.fill(angles_c, means_c, alpha=0.2)
     ax0.set_xticks(angles)
     ax0.set_xticklabels(labels)
+    #ax0.set_yticklabels([])        # 去掉极坐标的圆环刻度
+    #ax0.spines['polar'].set_visible(False)  # 去掉雷达外框
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)', fontsize=12)
 
-
-    # 2. Correlation heatmap
+    # ------------------ 2. Correlation heatmap ------------------
     ax1 = axes[1]
     im = ax1.imshow(corr, vmin=-1, vmax=1, cmap='coolwarm')
     ax1.set_xticks(range(len(labels)))
@@ -196,19 +202,20 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
     ax1.set_title('Spearman correlation among metrics', fontsize=12)
     fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
 
-    # 3. Rank scatter
+    # ------------------ 3. Rank scatter ------------------
     ax2 = axes[2]
     if len(labels) >= 2:
         a, b = labels[0], labels[1]
         ax2.scatter(df[a].rank(), df[b].rank(), alpha=0.6)
         r, p = spearmanr(df[a], df[b])
-        ax2.set_xlabel(f'rank({a})'); ax2.set_ylabel(f'rank({b})')
+        ax2.set_xlabel(f'rank({a})')
+        ax2.set_ylabel(f'rank({b})')
         ax2.set_title(f'Rank–rank scatter: ρ={r:.2f}, p={p:.1e}')
     else:
         ax2.text(0.5, 0.5, 'Select ≥2 metrics', ha='center', va='center')
         ax2.axis('off')
 
-    # 4. Delta centrality
+    # ------------------ 4. Delta centrality ------------------
     ax3 = axes[3]
     if cent_ref is not None:
         delta_mean = (df - cent_ref).mean(axis=0)
@@ -221,7 +228,7 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
         ax3.axis('off')
 
     fig.suptitle(f'{title_prefix} Multi-metric dashboard', fontsize=14)
-    plt.tight_layout()
+
     return fig
 
 
