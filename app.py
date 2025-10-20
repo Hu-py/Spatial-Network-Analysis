@@ -311,7 +311,7 @@ with mid_col:
     
 # 右： 对比网络
 with right_col:
-    st.subheader("Comparison network & centralities")
+    st.markdown(f"**Comparison centralities**")
     fig_cmp = dashboard_compare(df_selected, df_base[CENTRALS],
                                 title_prefix=scenario,
                                 main_seed=rand_seed_main,
