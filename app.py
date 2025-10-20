@@ -252,25 +252,19 @@ if 'last_params' not in st.session_state:
 st.set_page_config(page_title="Spatial Network Analysis")
 st.title("Spatial Network Analysis")
 
+# ------------------------------
+# Sidebar: Scenario & parameters
+# ------------------------------
 st.sidebar.title("Scenario & Parameters")
-
 scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
 central_choice = st.sidebar.selectbox("Color by centrality", ['degree','closeness','betweenness','eigenvector','pagerank'], index=2)
 
-# Default values
-m = 10
-n = 10
-diagonals = False
-n_org = 140
-radius = 0.15
-extra_ratio = 0.15
-m_h = 8
-n_h = 8
-right_n = 80
-r_h = 0.18
-bridges = 8
+# Default parameters
+m = 10; n = 10; diagonals = False
+n_org = 140; radius = 0.15; extra_ratio = 0.15
+m_h = 8; n_h = 8; right_n = 80; r_h = 0.18; bridges = 8
 
-# Grid parameters
+# Scenario-specific parameters
 if scenario == 'Grid':
     st.sidebar.markdown("**Grid parameters**")
     m = st.sidebar.slider("Grid m", 3, 20, m)
@@ -289,20 +283,16 @@ else:  # Hybrid
     r_h = st.sidebar.slider("Right radius", 0.06, 0.3, r_h, step=0.01)
     bridges = st.sidebar.slider("Bridges", 1, 30, bridges)
 
-
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Adjacency editing (select nodes, click button to apply)**")
-add_edge_click = st.sidebar.button("Add edge")
-remove_edge_click = st.sidebar.button("Remove edge")
-st.sidebar.markdown("---")
-
 st.sidebar.markdown("**Multi-metric dashboard**")
-metrics_sel = st.sidebar.multiselect("Select metrics", ['degree','closeness','betweenness','eigenvector','pagerank'], default=['degree','closeness','betweenness','eigenvector','pagerank'])
+metrics_sel = st.sidebar.multiselect("Select metrics",
+                                     ['degree','closeness','betweenness','eigenvector','pagerank'],
+                                     default=['degree','closeness','betweenness','eigenvector','pagerank'])
 st.sidebar.markdown("---")
-st.sidebar.caption("All changes automatically update the right panel; edge edits require button click.")
+st.sidebar.caption("Changes automatically update the dashboard.")
 
 # ------------------------------
-# Rebuild graph if parameters change
+# Rebuild graph if parameters changed
 # ------------------------------
 current_params = {
     'scenario': scenario, 'm': m, 'n': n, 'diagonals': diagonals,
@@ -333,7 +323,6 @@ if st.session_state.get('G') is None or need_rebuild(st.session_state.last_param
 G = st.session_state.G
 pos = st.session_state.pos
 
-
 # ------------------------------
 # Main layout
 # ------------------------------
@@ -346,34 +335,21 @@ with left_col:
         st.session_state.cent_before = cent
         st.session_state.cent_after = None
 
-    fig_net = draw_network_matplot(G, pos, cent[central_choice], title=f"{scenario} (colored by {central_choice})")
+    fig_net = draw_network_matplot(G, pos, cent[central_choice],
+                                   title=f"{scenario} (colored by {central_choice})")
     st.pyplot(fig_net)
 
-    
+    # Adjacency matrix
     fig_adj = show_adjacency_figure(G)
     st.pyplot(fig_adj)
 
-    
+    # Histogram
     vals = np.array(list(cent[central_choice].values()))
     fig_hist, axh = plt.subplots(figsize=(6,2.5))
     axh.hist(vals, bins=20, alpha=0.8)
     axh.set_title(f'{central_choice} distribution')
     axh.set_xlabel('value'); axh.set_ylabel('count')
     st.pyplot(fig_hist)
-
-    if st.session_state.cent_before is not None and st.session_state.cent_after is not None:
-        rho, p, top = (lambda c0, c1: (spearmanr(
-            np.array([c0[i] for i in sorted(c0.keys())]),
-            np.array([c1[i] for i in sorted(c1.keys())]))[0],
-            spearmanr(
-            np.array([c0[i] for i in sorted(c0.keys())]),
-            np.array([c1[i] for i in sorted(c1.keys())]))[1],
-            sorted([(n, float(c1[n]-c0[n])) for n in sorted(c0.keys())], key=lambda x: -abs(x[1]))[:10]
-        ))(st.session_state.cent_before[central_choice], st.session_state.cent_after[central_choice])
-        st.markdown(f"**Spearman rank correlation (before vs after) for {central_choice}:** rho={rho:.3f} (p={p:.3g})")
-        st.markdown("**Top nodes by change (node, Δvalue):**")
-        for nid, dv in top:
-            st.write(f"- {nid:>4}: {dv:+.4f}")
 
 with right_col:
     st.subheader("Multi-metric dashboard & export")
@@ -392,19 +368,20 @@ with right_col:
         df_for_dash = df_after
         dfz_for_dash = (df_for_dash - df_for_dash.mean())/(df_for_dash.std() or 1.0)
         corr_for_dash = df_for_dash.corr(method='spearman')
-        fig_dash = dashboard_plot(df_for_dash, dfz_for_dash, corr_for_dash, title_prefix=f'{scenario}', cent_ref=cent_ref_df)
+        fig_dash = dashboard_plot(df_for_dash, dfz_for_dash, corr_for_dash,
+                                  title_prefix=f'{scenario}', cent_ref=cent_ref_df)
     else:
         corr_sel = df_selected.corr(method='spearman')
-        fig_dash = dashboard_plot(df_selected, dfz_selected, corr_sel, title_prefix=f'{scenario}', cent_ref=None)
+        fig_dash = dashboard_plot(df_selected, dfz_selected, corr_sel,
+                                  title_prefix=f'{scenario}', cent_ref=None)
 
     st.pyplot(fig_dash)
 
     ts = pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')
-    csv1 = df_selected.to_csv(index=True)
-    csv2 = dfz_selected.to_csv(index=True)
-    csv3 = df_selected.corr(method='spearman').to_csv(index=True)
-
-    st.download_button("Download centralities CSV", data=csv1, file_name=f'centralities_{ts}.csv', mime='text/csv')
-    st.download_button("Download centralities_z CSV", data=csv2, file_name=f'centralities_z_{ts}.csv', mime='text/csv')
-    st.download_button("Download centralities_corr CSV", data=csv3, file_name=f'centralities_corr_{ts}.csv', mime='text/csv')
-
+    st.download_button("Download centralities CSV", data=df_selected.to_csv(index=True),
+                       file_name=f'centralities_{ts}.csv', mime='text/csv')
+    st.download_button("Download centralities_z CSV", data=dfz_selected.to_csv(index=True),
+                       file_name=f'centralities_z_{ts}.csv', mime='text/csv')
+    st.download_button("Download centralities_corr CSV",
+                       data=df_selected.corr(method='spearman').to_csv(index=True),
+                       file_name=f'centralities_corr_{ts}.csv', mime='text/csv')
