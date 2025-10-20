@@ -141,12 +141,7 @@ def dashboard_plot(df,dfz,corr,title_prefix='',cent_ref=None,main_seed=None,base
     ax0.set_xticks(angles)
     ax0.set_xticklabels(labels)
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)')
-    
-    # 去掉整个极坐标的外框和刻度线
-    ax0.set_axis_off()
-    # 仅保留数据线和填充
-    ax0.plot(angles_c, means_c, linewidth=2, color='tab:blue')
-    ax0.fill(angles_c, means_c, alpha=0.2)
+
 
     # Heatmap
     ax1 = axes[1]
