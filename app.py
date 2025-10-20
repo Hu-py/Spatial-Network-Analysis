@@ -177,13 +177,14 @@ def dashboard_plot(df, dfz, corr, title_prefix='', cent_ref=None):
 
     fig, axes = plt.subplots(4, 1, figsize=(8, 20))  # 4 rows, 1 column
 
-    # 1. Radar
-    ax0 = axes[0]
+    ax0 = axes[0]  
+    ax0 = plt.subplot(ax0.get_subplotspec(), polar=True)  # 保持原位置，同时启用极坐标
     ax0.plot(angles_c, means_c, linewidth=2)
     ax0.fill(angles_c, means_c, alpha=0.2)
     ax0.set_xticks(angles)
     ax0.set_xticklabels(labels)
     ax0.set_title(f'{title_prefix} Mean normalized centralities (z)', fontsize=12)
+
 
     # 2. Correlation heatmap
     ax1 = axes[1]
