@@ -289,7 +289,30 @@ metrics_sel = st.sidebar.multiselect("Select metrics",
                                      ['degree','closeness','betweenness','eigenvector','pagerank'],
                                      default=['degree','closeness','betweenness','eigenvector','pagerank'])
 st.sidebar.markdown("---")
-st.sidebar.caption("Changes automatically update the dashboard.")
+
+st.sidebar.markdown("**Adjacency editing (select nodes, click button to apply)**")
+u = st.sidebar.selectbox("Node u", node_list, index=0 if node_list else None)
+v = st.sidebar.selectbox("Node v", node_list, index=1 if len(node_list) > 1 else None)
+add_edge_click = st.sidebar.button("Add edge")
+remove_edge_click = st.sidebar.button("Remove edge")
+
+if add_edge_click and G is not None and u is not None and v is not None and u != v:
+    # 保存修改前的中心性
+    prev_cent = compute_centralities(G)
+    if not G.has_edge(u, v):
+        x0, y0 = pos[u]
+        x1, y1 = pos[v]
+        G.add_edge(u, v, length=np.hypot(x0-x1, y0-y1))
+    st.session_state.cent_before = prev_cent
+    st.session_state.cent_after = compute_centralities(G)
+
+if remove_edge_click and G is not None and u is not None and v is not None and u != v:
+    prev_cent = compute_centralities(G)
+    if G.has_edge(u, v):
+        G.remove_edge(u, v)
+    st.session_state.cent_before = prev_cent
+    st.session_state.cent_after = compute_centralities(G)
+
 
 # ------------------------------
 # Rebuild graph if parameters changed
