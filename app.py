@@ -257,6 +257,19 @@ st.sidebar.title("Scenario & Parameters")
 scenario = st.sidebar.selectbox("Scenario", ['Grid','Organic','Hybrid'])
 central_choice = st.sidebar.selectbox("Color by centrality", ['degree','closeness','betweenness','eigenvector','pagerank'], index=2)
 
+# Default values
+m = 10
+n = 10
+diagonals = False
+n_org = 140
+radius = 0.15
+extra_ratio = 0.15
+m_h = 8
+n_h = 8
+right_n = 80
+r_h = 0.18
+bridges = 8
+
 # Grid parameters
 if scenario == 'Grid':
     st.sidebar.markdown("**Grid parameters**")
