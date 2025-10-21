@@ -298,7 +298,7 @@ with left_col:
 
 # 中：对比图
 with mid_col:
-    st.markdown(f"**Comparison network ({scenario}, seed={rand_seed_base})**")
+    st.markdown(f"**Comparison network**")
     fig_net_cmp = draw_network_matplot(G_base, pos_base, cent_base[central_choice],
                                        title=f"{scenario} nodes={G_base.number_of_nodes()}, edges={G_base.number_of_edges()} (colored by {central_choice})")
     st.pyplot(fig_net_cmp)
